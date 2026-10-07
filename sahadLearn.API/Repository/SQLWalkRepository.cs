@@ -57,6 +57,10 @@ namespace sahadLearn.API.Repository
             existing.WalkImageUrl = walk.WalkImageUrl;
             existing.difficaltyId = walk.difficaltyId;
             existing.RegionID = walk.RegionID;
+            if (walk.WalkImageUrl != null)
+            {
+                existing.WalkImageUrl = walk.WalkImageUrl;
+            }
 
             await dbContext.SaveChangesAsync();
 
@@ -67,9 +71,14 @@ namespace sahadLearn.API.Repository
                 .FirstOrDefaultAsync(x => x.id == id);
         }
 
-        public async Task<List<Walk>> GetAll(string? searchKey, Guid? regionID)
+        public async Task<PagedResult<Walk>> GetAll(
+     String? searchKey, Guid? regionID, int pageNo, int pageSize)
         {
-            var walks = dbContext.Walks.AsQueryable();
+            // Guard against invalid values
+            pageNo = pageNo < 1 ? 1 : pageNo;
+            pageSize = pageSize < 1 ? 10 : Math.Min(pageSize, 100); // cap max page size
+
+            var walks = dbContext.Walks.AsNoTracking().AsQueryable();
 
             if (regionID.HasValue)
             {
@@ -83,7 +92,22 @@ namespace sahadLearn.API.Repository
                     x.discription.Contains(searchKey));
             }
 
-            return await walks.ToListAsync();
+            // Count AFTER filters, BEFORE Skip/Take
+            var totalCount = await walks.CountAsync();
+
+            var items = await walks
+                .OrderBy(x => x.name)              // required for stable paging
+                .Skip((pageNo - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PagedResult<Walk>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                PageNo = pageNo,
+                PageSize = pageSize
+            };
         }
         public async Task<Walk?> GetSingle(Guid id)
         {

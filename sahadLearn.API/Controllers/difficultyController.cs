@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
@@ -10,6 +11,7 @@ namespace sahadLearn.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class difficultyController : ControllerBase
     {
         private readonly sahadLearnDbContext dbContext;
@@ -46,6 +48,7 @@ namespace sahadLearn.API.Controllers
 
 
         [HttpGet("{id}")]
+        [Authorize]
         public async Task<ActionResult> GetById(Guid id)
         {
             var difficulty = await dbContext.Difficulties
@@ -72,6 +75,7 @@ namespace sahadLearn.API.Controllers
             });
         }
         [HttpPost]
+        [Authorize]
         public async Task<IActionResult> Create([FromBody] difficultyDTOCreateAndUpdate difficultyBody)
         {
             var dif = new Difficulty
@@ -100,6 +104,8 @@ namespace sahadLearn.API.Controllers
 
 
         [HttpPut("{id}")]
+        [Authorize]
+        [Authorize]
         public async Task<IActionResult> Update(Guid id, [FromBody] difficultyDTOCreateAndUpdate difficultyBody)
         {
             var difficulty = await dbContext.Difficulties

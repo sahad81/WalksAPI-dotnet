@@ -13,6 +13,8 @@ namespace sahadLearn.API.mapping
             CreateMap<SignleRegionDTO, Region>().ReverseMap();
             CreateMap<WalksCreateDTO, Walk>().ReverseMap();
             CreateMap<Walk, WalksSingleDTO>();
+            CreateMap<WalksCreateDTO, Walk>()
+    .ForMember(x => x.WalkImageUrl, opt => opt.Ignore());
             CreateMap<Walk, WalksDTO>();
             CreateMap<Difficulty, difficultyDTO>();
 

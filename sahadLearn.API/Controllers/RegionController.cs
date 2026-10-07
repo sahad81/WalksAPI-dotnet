@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using sahadLearn.API.customValidate;
@@ -9,6 +10,7 @@ using sahadLearn.API.Repository;
 
 namespace sahadLearn.API.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class RegionController : ControllerBase
@@ -24,7 +26,7 @@ namespace sahadLearn.API.Controllers
             this.mapper = mapper;
         }
 
-
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult> GetAll()
         {
@@ -54,6 +56,7 @@ namespace sahadLearn.API.Controllers
 
 
         [HttpGet("{id}")]
+        [Authorize]
         public async Task<ActionResult> GetById(Guid id)
         {
             var region = await regionRepository.GetById(id);
@@ -75,6 +78,7 @@ namespace sahadLearn.API.Controllers
         }
         [HttpPost]
         [ValidateModel]
+        [Authorize]
         public async Task<IActionResult> Create([FromBody] CreateRegionDTO regionbody)
         {
 
@@ -98,6 +102,7 @@ namespace sahadLearn.API.Controllers
 
 
         [HttpPut("{id}")]
+        [Authorize]
         public async Task<IActionResult> Update(Guid id, [FromBody] CreateRegionDTO regionbody)
         {
             var Region = mapper.Map<Region>(regionbody);
@@ -123,6 +128,7 @@ namespace sahadLearn.API.Controllers
 
 
         [HttpDelete("{id}")]
+        [Authorize]
         public async Task<IActionResult> Delete(Guid id)
         {
             var region = await regionRepository.Delete(id);

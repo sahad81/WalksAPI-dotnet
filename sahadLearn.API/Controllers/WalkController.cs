@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using sahadLearn.API.Data;
@@ -7,35 +8,46 @@ using sahadLearn.API.models.domains;
 using sahadLearn.API.models.DTO;
 using sahadLearn.API.Repository;
 
+using sahadLearn.API.helper;
 namespace sahadLearn.API.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class WalkController : Controller
     {
 
-
+        private readonly IImageService imageService;
         private readonly IMapper mapper;
         private readonly IwalkRepository repo;
-        public WalkController(IMapper mappper, IwalkRepository repo
+        public WalkController(IMapper mappper, IwalkRepository repo, IImageService imageService
             )
         {
             this.repo = repo;
             this.mapper = mappper;
+            this.imageService = imageService;
 
 
         }
+        [Authorize]
         [HttpPost]
-        [HttpPost]
-        public async Task<IActionResult> CreateWalk([FromBody] WalksCreateDTO createWalkDTO)
+        public async Task<IActionResult> CreateWalk([FromForm] WalksCreateDTO createWalkDTO)
         {
+            var imageError = imageHelper.ValidateImage(createWalkDTO.ImageFile);
+            if (imageError != null)
+                ModelState.AddModelError("ImageFile", imageError);
+
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
             try
             {
                 var walk = mapper.Map<Walk>(createWalkDTO);
 
+                if (createWalkDTO.ImageFile != null)
+                    walk.WalkImageUrl = await imageService.Upload(createWalkDTO.ImageFile);
+
                 walk = await repo.Create(walk);
 
-                // fetch the single walk again, with Region and Difficulty included
                 var createdWalk = await repo.GetSingle(walk.id);
 
                 if (createdWalk == null)
@@ -54,24 +66,27 @@ namespace sahadLearn.API.Controllers
                 return StatusCode(500, $"Something went wrong while creating the walk. {ex.Message}");
             }
         }
-
-
-
+        [Authorize]
         [HttpGet]
-        public async Task<ActionResult> GetAll([FromQuery] String? searchKey ,Guid? regionID)
+        public async Task<ActionResult> GetAll9(
+         [FromQuery] string? searchKey,
+         [FromQuery] Guid? regionID,
+         [FromQuery] int pageNo = 1,
+         [FromQuery] int pageSize = 10)
         {
-            var walk = await repo.GetAll(searchKey , regionID);
+            var walks = await repo.GetAll(searchKey, regionID, pageNo, pageSize);
 
+            var walkDTOs = mapper.Map<List<WalksDTO>>(walks.Items);
 
-
-            var walkDTO = mapper.Map<List<WalksDTO>>(walk);
-
-            return Ok(new
+            return Ok(new PagedResult<WalksDTO>
             {
-                result = walkDTO
+                Items = walkDTOs,
+                TotalCount = walks.TotalCount,
+                PageNo = walks.PageNo, 
+                PageSize = walks.PageSize
             });
-
         }
+        [Authorize]
         [HttpGet("{id:Guid}")]
         public async Task<IActionResult> GetById(Guid id)
         {
@@ -89,17 +104,34 @@ namespace sahadLearn.API.Controllers
                 result = walkDTO
             });
         }
+        [Authorize]
         [HttpPut("{id:Guid}")]
-        public async Task<IActionResult> Update(Guid id, [FromBody] WalksCreateDTO updateWalkDTO)
+        public async Task<IActionResult> Update(Guid id, [FromForm] WalksCreateDTO updateWalkDTO)
         {
+            var imageError = imageHelper.ValidateImage(updateWalkDTO.ImageFile);
+            if (imageError != null)
+                ModelState.AddModelError("ImageFile", imageError);
+
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
             try
             {
                 var walk = mapper.Map<Walk>(updateWalkDTO);
+
+                string? oldImageUrl = null;
+                if (updateWalkDTO.ImageFile != null)
+                {
+                    var existing = await repo.GetSingle(id);
+                    oldImageUrl = existing?.WalkImageUrl;
+                    walk.WalkImageUrl = await imageService.Upload(updateWalkDTO.ImageFile);
+                }
 
                 var updated = await repo.Update(walk, id);
 
                 if (updated == null)
                     return NotFound();
+
+                imageService.Delete(oldImageUrl); // remove old file after a successful update
 
                 var walkDTO = mapper.Map<WalksSingleDTO>(updated);
 
@@ -115,10 +147,7 @@ namespace sahadLearn.API.Controllers
             }
         }
 
-
-
-
-
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {

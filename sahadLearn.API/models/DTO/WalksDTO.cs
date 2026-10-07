@@ -22,6 +22,7 @@ namespace sahadLearn.API.models.DTO
         public String name { get; set; }
         public String discription { get; set; }
         public double LegthInKm { get; set; }
+        public IFormFile? ImageFile { get; set; }
         public String? WalkImageUrl { get; set; }
         public Guid difficaltyId { get; set; }
         public Guid RegionID { get; set; }

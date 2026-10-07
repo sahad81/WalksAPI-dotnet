@@ -10,7 +10,7 @@ namespace sahadLearn.API.Repository
         Task<Walk> Create(Walk walk);
         Task<Walk> Update(Walk walk ,Guid id);
         Task<Walk?> Delete(Guid id);
-         Task<List<Walk>> GetAll(String ? searchKey , Guid ? regionID);
+        Task<PagedResult<Walk>> GetAll(String ? searchKey , Guid ? regionID , int pageNo, int pageSize);
 
         Task<Walk?> GetSingle(Guid id);
 

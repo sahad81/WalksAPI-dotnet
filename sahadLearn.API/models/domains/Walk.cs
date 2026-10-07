@@ -10,6 +10,7 @@ namespace sahadLearn.API.models.domains
         public double LegthInKm { get; set; }
         public String? WalkImageUrl { get; set; }
 
+
         // Foreign keys
         public Guid difficaltyId { get; set; }
         public Guid RegionID { get; set; }
@@ -22,3 +23,4 @@ namespace sahadLearn.API.models.domains
         public Region Rigion { get; set; }
     }
 }
+
